@@ -81,7 +81,6 @@ class FrameQueue:
 
 	def push(self, frame):
 		if not self.pause_on_read or not self.reading_frames:
-			print("Pushing new frame")
 			frame_num = self.frame_count % self.num_frames
 			next_frame = (self.frame_count + 1) % self.num_frames
 			self.frames[frame_num] = frame

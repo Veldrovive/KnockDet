@@ -5,6 +5,7 @@ from time import sleep
 from array import array	
 from ctypes import *
 from contextlib import contextmanager
+import configparser
 
 ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
 
@@ -21,7 +22,13 @@ def noalsaerr():
     asound.snd_lib_error_set_handler(None)
 
 class Clap:
-	def __init__(self, callback_map={}, default_callback=None):
+	def __init__(self, callback_map={}, default_callback=None, config_path="./config.ini"):
+		config = configparser.ConfigParser()
+		config.read(config_path)
+		if "knock" not in config:
+			raise ValueError("recap object not in config")
+		config = config["knock"]
+
 		if default_callback is None:
 			self.default_callback = self.alert
 		else:
@@ -32,7 +39,8 @@ class Clap:
 		self.FORMAT = pyaudio.paInt16
 		self.CHANNELS = 1
 		self.RATE = 44100
-		self.threshold = 800
+		self.threshold = int(config["threshold"]) if "threshold" in config else 1000
+		print("Using a knock threshold of: {}".format(self.threshold))
 		self.max_value = 0
 		try:
 			with noalsaerr():

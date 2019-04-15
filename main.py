@@ -10,7 +10,7 @@ video_dir = "./recaps"
 
 if __name__ == "__main__":
 	trigger = Trigger(config_path=config_file, timeout=10000)
-	play = Playback(sec_rec=5, fps=25, cam_num=0)
+	play = Playback(sec_rec=5, cam_num=0, config_path=config_file)
 
 	def send_notif_recap():
 		print("Knock Triggered")
@@ -35,4 +35,4 @@ if __name__ == "__main__":
 		4: send_knock_notif
 	}
 
-	clap_det = Clap(knock_map, send_notif_recap) # If more than 4 knocks are detected, send a recap
+	clap_det = Clap(knock_map, send_notif_recap, config_path=config_file) # If more than 4 knocks are detected, send a recap
