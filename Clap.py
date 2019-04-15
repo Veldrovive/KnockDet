@@ -3,6 +3,22 @@ import sys
 from threading import Thread
 from time import sleep
 from array import array	
+from ctypes import *
+from contextlib import contextmanager
+
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+
+def py_error_handler(filename, line, function, err, fmt):
+    pass
+
+c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+@contextmanager
+def noalsaerr():
+    asound = cdll.LoadLibrary('libasound.so')
+    asound.snd_lib_error_set_handler(c_error_handler)
+    yield
+    asound.snd_lib_error_set_handler(None)
 
 class Clap:
 	def __init__(self, callback_map={}, default_callback=None):
@@ -16,9 +32,10 @@ class Clap:
 		self.FORMAT = pyaudio.paInt16
 		self.CHANNELS = 1
 		self.RATE = 44100
-		self.threshold = 30000
+		self.threshold = 800
 		self.max_value = 0
-		self.p = pyaudio.PyAudio()
+		while noalsaerr():
+			self.p = pyaudio.PyAudio()
 
 		self.clap = 0
 		self.state = 0
@@ -29,25 +46,8 @@ class Clap:
 
 		self.start()
 
-	# def find_input_device(self):
-	# 	device_index = None            
-	# 	for i in range( self.p.get_device_count() ):     
-	# 		devinfo = self.p.get_device_info_by_index(i)   
-	# 		print( "Device %d: %s"%(i,devinfo["name"]) )
-
-	# 		for keyword in ["mic","input"]:
-	# 			if keyword in devinfo["name"].lower():
-	# 				print( "Found an input: device %d - %s"%(i,devinfo["name"]) )
-	# 				device_index = i
-	# 				return device_index
-
-	# 	if device_index == None:
-	# 		print( "No preferred input found; using default input device." )
-
-	# 	return device_index
-
 	def find_input_device(self, keywords=[], verbose=False):
-		device_index = None  
+		device_index = None
 		for i in range(self.p.get_device_count()):
 			devinfo = self.p.get_device_info_by_index(i)
 			if verbose:

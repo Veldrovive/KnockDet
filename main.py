@@ -5,12 +5,12 @@ from threading import Thread
 import datetime
 import os
 
-config_file = "/Users/aidandempster/projects/2019/spring/knock/config.ini"
-video_dir = "/Users/aidandempster/projects/2019/spring/knock/recaps"
+config_file = "./config.ini"
+video_dir = "./recaps"
 
 if __name__ == "__main__":
 	trigger = Trigger(config_path=config_file, timeout=10000)
-	play = Playback(sec_rec=15, fps=25)
+	play = Playback(sec_rec=5, fps=25, cam_num=0)
 
 	def send_notif_recap():
 		print("Knock Triggered")
