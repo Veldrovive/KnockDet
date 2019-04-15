@@ -20,9 +20,11 @@ def noalsaerr():
     yield
     asound.snd_lib_error_set_handler(None)
 
-with noalsaerr():
+try:
+	with noalsaerr():
+		p = pyaudio.PyAudio()
+except OSError:
 	p = pyaudio.PyAudio()
-
 def find_input_device(keywords=[], verbose=False):
 		device_index = None  
 		for i in range(p.get_device_count()):

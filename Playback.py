@@ -2,11 +2,30 @@ import numpy as np
 import cv2
 from threading import Thread
 import time
+import configparser
+
+current_milli_time = lambda: int(round(time.time() * 1000))
 
 class Playback:
-	def __init__(self, cam_num=0, sec_rec=10, fps=None):
+	def __init__(self, cam_num=0, sec_rec=10, fps_cap=None, config_path="./config.ini"):
+		config = configparser.ConfigParser()
+		config.read(config_path)
+		if "recap" not in config:
+			raise ValueError("recap object not in config")
+		config = config["recap"]
+
+		self.fps_cap = int(config["fps_cap"]) if "fps_cap" in config else fps_cap
+		self.cam_num = int(config["cam_number"]) if "cam_number" in config else cam_num
+		self.sec_rec = int(config["seconds"]) if "seconds" in config else sec_rec
+
 		self.cap = cv2.VideoCapture(cam_num)
-		self.fps = self.test_fps() if fps is None else fps
+		self.fps = self.test_fps()
+		if self.fps_cap is not None and self.fps > self.fps_cap:
+			self.fps = self.fps_cap
+			print("Capping frame rate: {}".format(self.fps))
+		self.mspf = 1000/self.fps # Get the number of milliseconds between frames to force the frame rate to be equal to fps
+		print("Milliseconds per frame capped at: {}".format(self.mspf))
+		self.last_time = 0
 		self.num_frames = sec_rec * self.fps
 		print("Recording {} frames at a fps of {} to recap {} seconds of footage".format(self.num_frames, self.fps, sec_rec))
 
@@ -24,10 +43,13 @@ class Playback:
 		seconds = end - start
 		return int(round(test_frames / seconds))
 
-
 	def thread_cap(self):
 		def cap(self):
 			while True:
+				curr_time = current_milli_time()
+				if self.last_time+self.mspf > curr_time:
+					time.sleep((curr_time-(self.last_time-self.mspf))/1000)
+				self.last_time = current_milli_time()
 				ret, frame = self.cap.read()
 				self.fr.push(frame)
 
@@ -42,10 +64,6 @@ class Playback:
 			frame = np.uint8(frames[frame_num])
 			video.write(frame)
 		video.release()
-
-	def thread_save(self, file="/Users/aidandempster/projects/2019/spring/knock/recall.mov"):
-		thread = Thread(target=self.save_rec, args=(file,))
-		thread.start()
 
 	def close(self):
 		self.cap.release()
@@ -63,6 +81,7 @@ class FrameQueue:
 
 	def push(self, frame):
 		if not self.pause_on_read or not self.reading_frames:
+			print("Pushing new frame")
 			frame_num = self.frame_count % self.num_frames
 			next_frame = (self.frame_count + 1) % self.num_frames
 			self.frames[frame_num] = frame

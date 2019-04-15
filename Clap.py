@@ -34,7 +34,10 @@ class Clap:
 		self.RATE = 44100
 		self.threshold = 800
 		self.max_value = 0
-		while noalsaerr():
+		try:
+			with noalsaerr():
+				self.p = pyaudio.PyAudio()
+		except OSError:
 			self.p = pyaudio.PyAudio()
 
 		self.clap = 0
